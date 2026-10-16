@@ -100,3 +100,10 @@ export const date = (value: string, locale: string) =>
   new Intl.DateTimeFormat(locale, { dateStyle: "medium", timeZone }).format(
     new Date(value),
   );
+
+// A preferred service day is a calendar date, not an instant in the user's time zone.
+export const calendarDate = (value: string, locale: string) =>
+  new Intl.DateTimeFormat(locale, {
+    dateStyle: "medium",
+    timeZone: "UTC",
+  }).format(new Date(value));

@@ -28,7 +28,7 @@ Cola cifrada de correo con adaptadores SMTP y Resend HTTPS, reintentos e idempot
 | Formato, ESLint, TypeScript                      | Aprobados                                                                                                         |
 | Build NestJS y React/Vite                        | Aprobados                                                                                                         |
 | Jest: seguridad, archivos, cifrado               | 6 pruebas aprobadas                                                                                               |
-| Vitest: cliente HTTP, CSRF, errores y formatos   | 5 pruebas aprobadas                                                                                               |
+| Vitest: cliente HTTP, CSRF, errores y formatos   | 6 pruebas aprobadas                                                                                               |
 | Supertest con PostgreSQL 16 real                 | 28 escenarios aprobados                                                                                           |
 | Playwright Chromium escritorio y Pixel 7 emulado | 6 pruebas aprobadas                                                                                               |
 | Auditoría completa npm                           | 0 vulnerabilidades reportadas                                                                                     |

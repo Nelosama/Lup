@@ -327,9 +327,19 @@ describe("marketplace on real PostgreSQL", () => {
       budgetMin: "100",
       budgetMax: "300",
       currencyCode: "EUR",
+      preferredDate: "2026-10-16",
     };
     const r = await call("post", "/requests", client, data).expect(201);
     requestId = r.body.id;
+    expect(r.body.preferredDate).toBe("2026-10-16T00:00:00.000Z");
+    await call("post", "/requests", client, {
+      ...data,
+      preferredDate: "2026-02-30",
+    }).expect(400);
+    await call("post", "/requests", client, {
+      ...data,
+      preferredDate: "2026-10-16T00:00:00Z",
+    }).expect(400);
     await call("patch", `/requests/${requestId}`, client, {
       ...data,
       title: "Paint the living room walls",

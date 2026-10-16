@@ -40,8 +40,9 @@ export class RequestDto {
   @ApiProperty({ type: String })
   @Matches(/^[A-Z]{3}$/)
   currencyCode!: string;
-  @ApiPropertyOptional({ type: String, format: "date-time" })
+  @ApiPropertyOptional({ type: String, format: "date" })
   @IsOptional()
-  @IsDateString()
+  @IsDateString({ strict: true })
+  @Matches(/^\d{4}-\d{2}-\d{2}$/)
   preferredDate?: string;
 }

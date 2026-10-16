@@ -9,7 +9,13 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useTranslation } from "react-i18next";
 import { MapPin, Plus, ArrowUpRight } from "lucide-react";
 import { useAuth } from "../app/auth";
-import { api, date, money, type Paginated } from "../services/api";
+import {
+  api,
+  date,
+  calendarDate,
+  money,
+  type Paginated,
+} from "../services/api";
 import { categoryName, useCatalog } from "../services/catalog";
 import { SmartForm, type Field } from "../components/SmartForm";
 import {
@@ -279,7 +285,8 @@ export function RequestDetail() {
           )}
           {r.preferredDate && (
             <p>
-              {t("preferredDate")}: {date(r.preferredDate, i18n.language)}
+              {t("preferredDate")}:{" "}
+              {calendarDate(r.preferredDate, i18n.language)}
             </p>
           )}
           <div className="actions">

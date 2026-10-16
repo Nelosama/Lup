@@ -63,3 +63,12 @@ describe("authenticated API client", () => {
     expect(api.money("1250.50", "HNL", "es-HN")).toContain("1,250.50");
   });
 });
+
+it("keeps a preferred calendar day stable while formatting instants in the user time zone", () => {
+  api.setTimeZone("America/Bogota");
+  expect(api.calendarDate("2026-10-16T00:00:00.000Z", "en-US")).toBe(
+    "Oct 16, 2026",
+  );
+  expect(api.date("2026-10-16T00:00:00.000Z", "en-US")).toBe("Oct 15, 2026");
+  api.setTimeZone("UTC");
+});
