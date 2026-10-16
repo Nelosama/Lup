@@ -1,0 +1,60 @@
+name: Lup CI
+on:
+  push:
+    branches: [main, development]
+  pull_request:
+    branches: [main]
+permissions:
+  contents: read
+concurrency:
+  group: lup-ci-${{ github.ref }}
+  cancel-in-progress: true
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_USER: lup
+          POSTGRES_PASSWORD: lup_ci_only
+          POSTGRES_DB: lup_test
+        ports: ["5432:5432"]
+        options: >-
+          --health-cmd "pg_isready -U lup -d lup_test"
+          --health-interval 5s --health-timeout 5s --health-retries 10
+    env:
+      NODE_ENV: test
+      MAIL_MODE: local
+      DATABASE_URL: postgresql://lup:lup_ci_only@localhost:5432/lup_test
+      DIRECT_URL: postgresql://lup:lup_ci_only@localhost:5432/lup_test
+      E2E_DATABASE_URL: postgresql://lup:lup_ci_only@localhost:5432/lup_test
+      WEB_ORIGINS: http://localhost:5173
+      PUBLIC_WEB_URL: http://localhost:5173
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "24"
+          cache: npm
+      - run: npm ci
+      - run: npm run db:generate
+      - run: npm run db:migrate
+      - run: npm run db:seed
+      - run: npm run lint
+      - run: npm run typecheck
+      - run: npm run build
+      - run: npm test
+      - run: npm run test:integration
+      - run: npm audit --omit=dev --audit-level=high
+      - run: npx playwright install --with-deps chromium
+      - run: npm run test:e2e
+      - uses: actions/upload-artifact@v4
+        if: failure()
+        with:
+          name: playwright-failures
+          path: |
+            frontend/playwright-report/
+            frontend/test-results/
+          retention-days: 7

@@ -1,0 +1,8 @@
+node_modules
+**/dist
+package-lock.json
+**/migrations
+.local
+**/.local
+playwright-report
+test-results
