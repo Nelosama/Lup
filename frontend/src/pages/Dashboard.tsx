@@ -243,7 +243,10 @@ export function Settings() {
               submit="save"
               success="saved"
               onSubmit={async (d) => {
-                await api("/users/me", "PATCH", d);
+                await api("/users/me", "PATCH", {
+                  ...d,
+                  phone: d.phone ?? null,
+                });
                 await i18n.changeLanguage(d.locale);
                 await refresh();
               }}

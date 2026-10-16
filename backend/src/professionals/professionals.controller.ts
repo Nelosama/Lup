@@ -51,6 +51,17 @@ const profileSelect = {
   },
   portfolio: { orderBy: { position: "asc" as const } },
 } satisfies Prisma.ProfessionalProfileSelect;
+const searchSelect = {
+  ...profileSelect,
+  experienceDescription: false,
+  portfolio: false,
+  services: {
+    ...profileSelect.services,
+    take: 1,
+    orderBy: { createdAt: "asc" as const },
+  },
+  areas: { ...profileSelect.areas, take: 1 },
+} satisfies Prisma.ProfessionalProfileSelect;
 @Controller()
 export class ProfessionalsController {
   constructor(
@@ -143,22 +154,27 @@ export class ProfessionalsController {
     const [items, total] = await this.db.$transaction([
       this.db.professionalProfile.findMany({
         where,
-        select: profileSelect,
+        select: searchSelect,
         ...paging(q),
         orderBy: { createdAt: "desc" },
       }),
       this.db.professionalProfile.count({ where }),
     ]);
     const ids = items.map((x) => x.userId);
-    const stats = await this.db.review.groupBy({
-      by: ["reviewedUserId"],
-      where: { reviewedUserId: { in: ids }, moderationStatus: "VISIBLE" },
-      _avg: { rating: true },
-      _count: { rating: true },
-    });
+    const stats = ids.length
+      ? await this.db.$queryRaw<
+          { reviewedUserId: string; rating: number; count: number }[]
+        >(Prisma.sql`
+      SELECT r."reviewedUserId",AVG(r.rating)::float8 AS rating,COUNT(*)::int AS count
+      FROM "Review" r JOIN "Engagement" e ON e.id=r."engagementId"
+      WHERE r."reviewedUserId"=e."professionalId" AND r."moderationStatus"='VISIBLE'
+      AND r."reviewedUserId" IN (${Prisma.join(ids.map((id) => Prisma.sql`${id}::uuid`))}) GROUP BY r."reviewedUserId"
+    `)
+      : [];
     return result(
       items.map((p) => ({
         ...p,
+        biography: Array.from(p.biography).slice(0, 220).join(""),
         ...(hasGeo
           ? {
               distanceKm:
@@ -167,9 +183,9 @@ export class ProfessionalsController {
             }
           : {}),
         rating:
-          stats.find((x) => x.reviewedUserId === p.userId)?._avg.rating ?? null,
+          stats.find((x) => x.reviewedUserId === p.userId)?.rating ?? null,
         reviewCount:
-          stats.find((x) => x.reviewedUserId === p.userId)?._count.rating ?? 0,
+          stats.find((x) => x.reviewedUserId === p.userId)?.count ?? 0,
       })),
       total,
       q,
@@ -310,13 +326,21 @@ export class ProfessionalsController {
     if (!p) throw new NotFoundException();
     const [stats, distribution, completedJobs, trend] = await Promise.all([
       this.db.review.aggregate({
-        where: { reviewedUserId: p.userId, moderationStatus: "VISIBLE" },
+        where: {
+          reviewedUserId: p.userId,
+          moderationStatus: "VISIBLE",
+          engagement: { professionalId: p.userId },
+        },
         _avg: { rating: true },
         _count: { rating: true },
       }),
       this.db.review.groupBy({
         by: ["rating"],
-        where: { reviewedUserId: p.userId, moderationStatus: "VISIBLE" },
+        where: {
+          reviewedUserId: p.userId,
+          moderationStatus: "VISIBLE",
+          engagement: { professionalId: p.userId },
+        },
         _count: true,
       }),
       this.db.engagement.count({
@@ -324,7 +348,7 @@ export class ProfessionalsController {
       }),
       this.db.$queryRaw<
         { month: Date; rating: number; count: number }[]
-      >`SELECT date_trunc('month',"createdAt" AT TIME ZONE 'UTC') AS month, AVG(rating)::float8 AS rating, COUNT(*)::int AS count FROM "Review" WHERE "reviewedUserId"=${p.userId}::uuid AND "moderationStatus"='VISIBLE' AND "createdAt">NOW()-INTERVAL '12 months' GROUP BY month ORDER BY month`,
+      >`SELECT date_trunc('month',r."createdAt" AT TIME ZONE 'UTC') AS month, AVG(r.rating)::float8 AS rating, COUNT(*)::int AS count FROM "Review" r JOIN "Engagement" e ON e.id=r."engagementId" WHERE r."reviewedUserId"=${p.userId}::uuid AND e."professionalId"=r."reviewedUserId" AND r."moderationStatus"='VISIBLE' AND r."createdAt">NOW()-INTERVAL '12 months' GROUP BY month ORDER BY month`,
     ]);
     return {
       ...p,
@@ -346,8 +370,19 @@ export class ProfessionalsController {
     const p = await this.db.professionalProfile.findUniqueOrThrow({
       where: { userId: u.id },
     });
-    return this.db.professionalService.create({
-      data: { ...d, professionalId: p.id },
+    return this.db.$transaction(async (tx) => {
+      await tx.$queryRaw`SELECT id FROM "ProfessionalProfile" WHERE id=${p.id}::uuid FOR UPDATE`;
+      if (
+        (await tx.professionalService.count({
+          where: { professionalId: p.id },
+        })) >= 30
+      )
+        throw new BadRequestException(
+          "Service limit reached; edit an existing service",
+        );
+      return tx.professionalService.create({
+        data: { ...d, professionalId: p.id },
+      });
     });
   }
   @Verified() @Put("professional/services/:id") async updateService(

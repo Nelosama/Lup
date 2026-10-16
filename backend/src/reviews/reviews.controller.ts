@@ -51,6 +51,7 @@ export class ReviewsController {
   ) {
     const where = {
       reviewedUserId: id,
+      engagement: { professionalId: id },
       moderationStatus: "VISIBLE" as const,
       reviewedUser: { status: "ACTIVE" as const },
     };

@@ -6,7 +6,7 @@ import {
 import { hash, verify, argon2id } from "argon2";
 import { createHash, randomBytes } from "node:crypto";
 import { PrismaService } from "../common/prisma.service";
-import { PolicyService } from "../common/policy.service";
+import { PolicyService, publicText } from "../common/policy.service";
 import { privateUser } from "../common/dto";
 import { RegisterDto } from "./auth.dto";
 import { MailService } from "./mail.service";
@@ -26,6 +26,7 @@ export class AuthService {
   ) {}
   async register(d: RegisterDto) {
     this.mail.ensureConfigured();
+    publicText(d.name);
     await this.policy.location(d.countryCode, d.cityId);
     const email = d.email.trim().toLowerCase();
     const h = await passwordHash(d.password);

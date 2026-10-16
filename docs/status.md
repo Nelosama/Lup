@@ -12,7 +12,7 @@ Catálogos de categorías traducidas y ubicaciones reales, perfiles profesionale
 
 Búsqueda por texto, categoría, país, región, ciudad, zona y radio opcional. Las distancias se calculan sobre centros de ciudades con coordenadas y no se presentan como distancia a una vivienda o profesional. El catálogo inicial no inventa coordenadas.
 
-Solicitudes editables antes de propuestas, cancelación, propuestas comparables, aceptación transaccional con protección de doble aceptación, contratación directa con confirmación, mensajería privada paginada, no leídos y notificaciones. Finalización bilateral, evaluaciones trazables, promedio, distribución y evolución mensual.
+Solicitudes editables antes de propuestas, cancelación, propuestas comparables, aceptación transaccional con protección de doble aceptación, contratación directa con confirmación, mensajería privada paginada, no leídos y notificaciones. Finalización bilateral, evaluaciones trazables, promedio, distribución y evolución mensual. La reputación profesional solo utiliza reseñas recibidas al actuar como profesional; las opiniones de su actividad como cliente se conservan en la contratación y no alteran esa reputación.
 
 Bloqueos, reportes, suspensión, moderación y auditoría. Acceso excepcional a mensajes exclusivamente por un reporte abierto del mensaje específico y con motivo auditado. Super Admin inicial mediante comando offline; no existen cuentas ni contraseñas administrativas predeterminadas. La verificación de perfiles se retira si cambia la información revisada.
 
@@ -29,7 +29,7 @@ Cola cifrada de correo con adaptadores SMTP y Resend HTTPS, reintentos e idempot
 | Build NestJS y React/Vite                        | Aprobados                                                                                                         |
 | Jest: seguridad, archivos, cifrado               | 6 pruebas aprobadas                                                                                               |
 | Vitest: cliente HTTP, CSRF, errores y formatos   | 5 pruebas aprobadas                                                                                               |
-| Supertest con PostgreSQL 16 real                 | 25 escenarios aprobados                                                                                           |
+| Supertest con PostgreSQL 16 real                 | 28 escenarios aprobados                                                                                           |
 | Playwright Chromium escritorio y Pixel 7 emulado | 6 pruebas aprobadas                                                                                               |
 | Auditoría completa npm                           | 0 vulnerabilidades reportadas                                                                                     |
 | Migraciones desde base vacía y seed repetido     | Aprobados; 8 países, 16 categorías, 32 traducciones, 0 usuarios ficticios                                         |

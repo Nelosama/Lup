@@ -16,8 +16,11 @@ export function AuthPage({
   const nav = useNavigate();
   const [params] = useSearchParams();
   const target = params.get("next");
+  const destination = new URL(target ?? "/app", window.location.origin);
   const next =
-    target?.startsWith("/") && !target.startsWith("//") ? target : "/app";
+    target?.startsWith("/") && destination.origin === window.location.origin
+      ? destination.pathname + destination.search + destination.hash
+      : "/app";
   if (auth.loading) return <Loader />;
   let fields: Field[] = [];
   if (["login", "register", "forgot"].includes(mode))

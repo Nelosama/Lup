@@ -20,7 +20,7 @@ import {
 } from "class-validator";
 import { Actor, CurrentUser } from "../auth/guards";
 import { PrismaService } from "../common/prisma.service";
-import { PolicyService } from "../common/policy.service";
+import { PolicyService, publicText } from "../common/policy.service";
 import { privateUser } from "../common/dto";
 class UpdateUserDto {
   @ApiPropertyOptional({ type: String, minLength: 2, maxLength: 100 })
@@ -31,7 +31,7 @@ class UpdateUserDto {
   @ApiPropertyOptional({ type: String })
   @IsOptional()
   @Matches(/^\+[1-9]\d{7,14}$/)
-  phone?: string;
+  phone?: string | null;
   @ApiPropertyOptional({ type: String })
   @IsOptional()
   @Matches(/^[A-Z]{2}$/)
@@ -99,6 +99,7 @@ export class UsersController {
     return { success: true };
   }
   @Patch("me") async update(@CurrentUser() u: Actor, @Body() d: UpdateUserDto) {
+    if (d.name !== undefined) publicText(d.name);
     await this.policy.location(
       d.countryCode ?? u.countryCode,
       d.cityId ?? u.cityId ?? undefined,

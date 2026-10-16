@@ -1,3 +1,4 @@
+import { publicText } from "../common/policy.service";
 import { ApiConsumes, ApiBody } from "@nestjs/swagger";
 import { ApiProperty, ApiPropertyOptional } from "@nestjs/swagger";
 import {
@@ -121,6 +122,7 @@ export class StorageController {
     @Body() d: CaptionDto,
   ) {
     if (!file) throw new BadRequestException("Image required");
+    publicText(d.description ?? "");
     const p = await this.db.professionalProfile.findUniqueOrThrow({
       where: { userId: u.id },
     });

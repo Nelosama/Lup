@@ -193,6 +193,21 @@ describe("marketplace on real PostgreSQL", () => {
     }).expect(200);
     await call("patch", "/users/me", client, { countryCode: "HN" }).expect(400);
   });
+  it("rejects contact details in public names and supports removing private phone data", async () => {
+    await call("patch", "/users/me", client, {
+      name: "Contact me at +34 612 345 678",
+    }).expect(400);
+    await call("post", "/auth/register", undefined, {
+      name: "person@example.com",
+      email: `private-name-${randomUUID()}@example.com`,
+      password: "StrongPassphrase!42",
+      countryCode: "ES",
+    }).expect(400);
+    const cleared = await call("patch", "/users/me", client, {
+      phone: null,
+    }).expect(200);
+    expect(cleared.body.phone).toBeNull();
+  });
   it("creates professional profiles and publishes a service", async () => {
     for (const s of [pro, pro2]) {
       const r = await call("put", "/professional/me", s, {
@@ -233,6 +248,10 @@ describe("marketplace on real PostgreSQL", () => {
     const r = await call("post", "/professional/portfolio", pro)
       .attach("file", png, "work.png")
       .expect(201);
+    await call("post", "/professional/portfolio", pro)
+      .field("description", "Contact +34 612 345 678")
+      .attach("file", png, "private-caption.png")
+      .expect(400);
     await call("patch", "/professional/portfolio/order", pro, {
       ids: [r.body.id],
     }).expect(200);
@@ -259,6 +278,43 @@ describe("marketplace on real PostgreSQL", () => {
       200,
     );
     expect(detail.body.user.phone).toBeUndefined();
+  });
+  it("bounds service publication and keeps public search responses compact", async () => {
+    const p = await db.professionalProfile.findUniqueOrThrow({
+      where: { userId: pro.id },
+    });
+    const existing = await db.professionalService.count({
+      where: { professionalId: p.id },
+    });
+    const temporary = Array.from({ length: 30 - existing }, (_, i) => ({
+      id: randomUUID(),
+      professionalId: p.id,
+      categoryId: category.id,
+      title: `Additional test service ${String.fromCharCode(65 + i)}`,
+      description: "A test-only service with detailed scope and boundaries.",
+      currencyCode: "EUR",
+    }));
+    await db.professionalService.createMany({ data: temporary });
+    try {
+      await call("post", "/professional/services", pro, {
+        categoryId: category.id,
+        title: "An additional service beyond the quota",
+        description: "This publication exceeds the configured service quota.",
+        currencyCode: "EUR",
+      }).expect(400);
+      const results = await call("get", `/professionals?q=${suffix}`).expect(
+        200,
+      );
+      const item = results.body.items.find((x: any) => x.id === p.id);
+      expect(item.services).toHaveLength(1);
+      expect(item.portfolio).toBeUndefined();
+      expect(item.experienceDescription).toBeUndefined();
+      expect(item.biography.length).toBeLessThanOrEqual(220);
+    } finally {
+      await db.professionalService.deleteMany({
+        where: { id: { in: temporary.map((s) => s.id) } },
+      });
+    }
   });
   it("publishes and edits a service request, rejects private public content", async () => {
     const data = {
@@ -472,6 +528,52 @@ describe("marketplace on real PostgreSQL", () => {
     const metrics = await call("get", "/admin/analytics", admin).expect(200);
     expect(metrics.body.reportedEngagements).toBeGreaterThan(0);
     expect(metrics.body.independentlyVerifiedJobs).toBeNull();
+  });
+  it("keeps client feedback out of professional reputation for dual-role accounts", async () => {
+    const professional = await db.professionalProfile.findUniqueOrThrow({
+      where: { userId: pro.id },
+    });
+    const other = await db.professionalProfile.findUniqueOrThrow({
+      where: { userId: pro2.id },
+    });
+    const job = await call("post", "/engagements/direct", pro, {
+      professionalId: other.id,
+      title: "A separate furniture restoration job",
+      currencyCode: "EUR",
+    }).expect(201);
+    await call("post", `/engagements/${job.body.id}/state`, pro2, {
+      action: "AGREE",
+    }).expect(201);
+    await call("post", `/engagements/${job.body.id}/state`, pro2, {
+      action: "START",
+    }).expect(201);
+    await call("post", `/engagements/${job.body.id}/state`, pro, {
+      action: "COMPLETE",
+    }).expect(201);
+    await call("post", `/engagements/${job.body.id}/state`, pro2, {
+      action: "COMPLETE",
+    }).expect(201);
+    await call("post", "/reviews", pro2, {
+      engagementId: job.body.id,
+      rating: 1,
+      comment:
+        "This feedback describes the client, not their professional work.",
+    }).expect(201);
+    const detail = await call(
+      "get",
+      `/professionals/${professional.id}`,
+    ).expect(200);
+    expect(detail.body.rating).toBe(5);
+    expect(detail.body.reviewCount).toBe(1);
+    expect(
+      detail.body.trend.reduce((sum: number, r: any) => sum + r.count, 0),
+    ).toBe(1);
+    const listing = await call("get", `/professionals?q=${suffix}`).expect(200);
+    expect(
+      listing.body.items.find((p: any) => p.id === professional.id).rating,
+    ).toBe(5);
+    const reviews = await call("get", `/reviews/user/${pro.id}`).expect(200);
+    expect(reviews.body.total).toBe(1);
   });
   it("searches zones and computes distances only from available coordinates", async () => {
     const p = await db.professionalProfile.findUniqueOrThrow({
