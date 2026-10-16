@@ -1,4 +1,6 @@
+import { ApiOperation } from "@nestjs/swagger";
 import {
+  applyDecorators,
   CanActivate,
   ExecutionContext,
   ForbiddenException,
@@ -20,7 +22,8 @@ export type AuthRequest = Request & {
   sessionId?: string;
   csrfToken?: string;
 };
-export const Public = () => SetMetadata("public", true);
+export const Public = () =>
+  applyDecorators(SetMetadata("public", true), ApiOperation({ security: [] }));
 export const Roles = (...roles: Role[]) => SetMetadata("roles", roles);
 export const Verified = () => SetMetadata("verified", true);
 export const CurrentUser = createParamDecorator(

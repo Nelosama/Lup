@@ -22,22 +22,22 @@ Cola cifrada de correo con adaptadores SMTP y Resend HTTPS, reintentos e idempot
 
 ## Evidencia local ejecutada
 
-| Comprobación                                     | Resultado                                                                                      |
-| ------------------------------------------------ | ---------------------------------------------------------------------------------------------- |
-| Instalación desde lockfile (`npm ci`)            | Aprobada                                                                                       |
-| Formato, ESLint, TypeScript                      | Aprobados                                                                                      |
-| Build NestJS y React/Vite                        | Aprobados                                                                                      |
-| Jest: seguridad, archivos, cifrado               | 6 pruebas aprobadas                                                                            |
-| Vitest: cliente HTTP, CSRF, errores y formatos   | 5 pruebas aprobadas                                                                            |
-| Supertest con PostgreSQL 16 real                 | 24 escenarios aprobados                                                                        |
-| Playwright Chromium escritorio y Pixel 7 emulado | 6 pruebas aprobadas                                                                            |
-| Auditoría completa npm                           | 0 vulnerabilidades reportadas                                                                  |
-| Migraciones desde base vacía y seed repetido     | Aprobados; 8 países, 16 categorías, 32 traducciones, 0 usuarios ficticios                      |
-| Backup/restore local PostgreSQL                  | Aprobado; 28 tablas con RLS, índice de aceptación única y migraciones conservados              |
-| Docker build y ejecución no root                 | Aprobados; health conectado a PostgreSQL, login HTTP 201 y cookie HttpOnly/Secure/SameSite=Lax |
-| GitHub Actions remoto                            | Pendiente de la primera publicación de la rama                                                 |
+| Comprobación                                     | Resultado                                                                                                         |
+| ------------------------------------------------ | ----------------------------------------------------------------------------------------------------------------- |
+| Instalación desde lockfile (`npm ci`)            | Aprobada                                                                                                          |
+| Formato, ESLint, TypeScript                      | Aprobados                                                                                                         |
+| Build NestJS y React/Vite                        | Aprobados                                                                                                         |
+| Jest: seguridad, archivos, cifrado               | 6 pruebas aprobadas                                                                                               |
+| Vitest: cliente HTTP, CSRF, errores y formatos   | 5 pruebas aprobadas                                                                                               |
+| Supertest con PostgreSQL 16 real                 | 25 escenarios aprobados                                                                                           |
+| Playwright Chromium escritorio y Pixel 7 emulado | 6 pruebas aprobadas                                                                                               |
+| Auditoría completa npm                           | 0 vulnerabilidades reportadas                                                                                     |
+| Migraciones desde base vacía y seed repetido     | Aprobados; 8 países, 16 categorías, 32 traducciones, 0 usuarios ficticios                                         |
+| Backup/restore local PostgreSQL                  | Aprobado; 28 tablas con RLS, índice de aceptación única y migraciones conservados                                 |
+| Docker build y ejecución no root                 | Aprobados; health conectado a PostgreSQL, login HTTP 201 y cookie HttpOnly/Secure/SameSite=Lax                    |
+| GitHub Actions remoto                            | [Consultar ejecuciones de la rama de entrega](https://github.com/Nelosama/Lup/actions?query=branch%3Adevelopment) |
 
-La suite de API prueba registro de ambos tipos, tokens no reutilizables, revocación, privacidad, autorización, cargas con un adaptador de Storage en memoria, búsquedas, propuestas, aceptación concurrente, contratos, acceso prohibido a conversaciones ajenas, finalización bilateral, reseñas falsas/duplicadas, bloqueos, reportes, moderación, RLS, verificación y administración de catálogos. El adaptador HTTP de correo utiliza una respuesta simulada del proveedor. Estas pruebas no equivalen a ensayos contra Supabase o un proveedor de correo hospedado.
+La suite comprueba también los contratos OpenAPI de campos, cookies y CSRF. La suite de API prueba registro de ambos tipos, tokens no reutilizables, revocación, privacidad, autorización, cargas con un adaptador de Storage en memoria, búsquedas, propuestas, aceptación concurrente, contratos, acceso prohibido a conversaciones ajenas, finalización bilateral, reseñas falsas/duplicadas, bloqueos, reportes, moderación, RLS, verificación y administración de catálogos. El adaptador HTTP de correo utiliza una respuesta simulada del proveedor. Estas pruebas no equivalen a ensayos contra Supabase o un proveedor de correo hospedado.
 
 Playwright realiza el flujo cliente/profesional completo en ambos tamaños: registro y verificación local, perfil, servicio, solicitud, propuesta, aceptación, mensaje, finalización y evaluación. También prueba ES/EN, ausencia de desbordamiento horizontal, Escape en diálogos y recuperación de contraseña a través del buzón local.
 

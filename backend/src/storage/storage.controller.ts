@@ -1,3 +1,5 @@
+import { ApiConsumes, ApiBody } from "@nestjs/swagger";
+import { ApiProperty, ApiPropertyOptional } from "@nestjs/swagger";
 import {
   BadRequestException,
   Body,
@@ -27,10 +29,18 @@ import { PrismaService } from "../common/prisma.service";
 import { StorageService } from "./storage.service";
 import { configuration } from "../common/config";
 class CaptionDto {
-  @IsOptional() @IsString() @MaxLength(300) description?: string;
+  @ApiPropertyOptional({ type: String, maxLength: 300 })
+  @IsOptional()
+  @IsString()
+  @MaxLength(300)
+  description?: string;
 }
 class OrderDto {
-  @IsArray() @ArrayMaxSize(50) @IsUUID("all", { each: true }) ids!: string[];
+  @ApiProperty({ type: String, isArray: true, format: "uuid" })
+  @IsArray()
+  @ArrayMaxSize(50)
+  @IsUUID("all", { each: true })
+  ids!: string[];
 }
 @Controller()
 export class StorageController {
@@ -40,6 +50,16 @@ export class StorageController {
   ) {}
   @Verified()
   @Post("users/me/avatar")
+  @ApiConsumes("multipart/form-data")
+  @ApiBody({
+    schema: {
+      type: "object",
+      properties: {
+        file: { type: "string", format: "binary" },
+      },
+      required: ["file"],
+    },
+  })
   @UseInterceptors(
     FileInterceptor("file", {
       limits: { fileSize: 5 * 1024 * 1024, files: 1, fields: 0 },
@@ -79,6 +99,17 @@ export class StorageController {
   }
   @Verified()
   @Post("professional/portfolio")
+  @ApiConsumes("multipart/form-data")
+  @ApiBody({
+    schema: {
+      type: "object",
+      properties: {
+        file: { type: "string", format: "binary" },
+        description: { type: "string", maxLength: 300 },
+      },
+      required: ["file"],
+    },
+  })
   @UseInterceptors(
     FileInterceptor("file", {
       limits: { fileSize: 5 * 1024 * 1024, files: 1, fields: 1 },
@@ -155,6 +186,16 @@ export class StorageController {
   }
   @Verified()
   @Post("requests/:id/images")
+  @ApiConsumes("multipart/form-data")
+  @ApiBody({
+    schema: {
+      type: "object",
+      properties: {
+        file: { type: "string", format: "binary" },
+      },
+      required: ["file"],
+    },
+  })
   @UseInterceptors(
     FileInterceptor("file", {
       limits: { fileSize: 5 * 1024 * 1024, files: 1, fields: 0 },

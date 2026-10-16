@@ -1,3 +1,4 @@
+import { ApiProperty } from "@nestjs/swagger";
 import {
   BadRequestException,
   Body,
@@ -26,14 +27,29 @@ import { Actor, CurrentUser, Roles } from "../auth/guards";
 import { PrismaService } from "../common/prisma.service";
 import { PageDto, paging, publicUser, result } from "../common/dto";
 class TranslationDto {
-  @IsIn(["es", "en", "pt"]) locale!: string;
-  @IsString() @Length(2, 100) name!: string;
+  @ApiProperty({ type: String, enum: ["es", "en", "pt"] })
+  @IsIn(["es", "en", "pt"])
+  locale!: string;
+  @ApiProperty({ type: String, minLength: 2, maxLength: 100 })
+  @IsString()
+  @Length(2, 100)
+  name!: string;
 }
 class CategoryDto {
-  @Matches(/^[a-z0-9-]{2,80}$/) slug!: string;
-  @IsBoolean() active!: boolean;
-  @IsBoolean() requiresLicense!: boolean;
-  @IsInt() @Min(0) position!: number;
+  @ApiProperty({ type: String })
+  @Matches(/^[a-z0-9-]{2,80}$/)
+  slug!: string;
+  @ApiProperty({ type: Boolean })
+  @IsBoolean()
+  active!: boolean;
+  @ApiProperty({ type: Boolean })
+  @IsBoolean()
+  requiresLicense!: boolean;
+  @ApiProperty({ type: Number, minimum: 0 })
+  @IsInt()
+  @Min(0)
+  position!: number;
+  @ApiProperty({ type: () => TranslationDto, isArray: true })
   @IsArray()
   @ArrayMaxSize(3)
   @ValidateNested({ each: true })
@@ -41,16 +57,30 @@ class CategoryDto {
   translations!: TranslationDto[];
 }
 class StatusDto {
-  @IsIn(["ACTIVE", "SUSPENDED"]) status!: "ACTIVE" | "SUSPENDED";
-  @IsString() @Length(15, 2000) reason!: string;
+  @ApiProperty({ type: String, enum: ["ACTIVE", "SUSPENDED"] })
+  @IsIn(["ACTIVE", "SUSPENDED"])
+  status!: "ACTIVE" | "SUSPENDED";
+  @ApiProperty({ type: String, minLength: 15, maxLength: 2000 })
+  @IsString()
+  @Length(15, 2000)
+  reason!: string;
 }
 class VerificationDto {
-  @IsIn(["PENDING_REVIEW", "VERIFIED", "REJECTED", "UNVERIFIED"]) status!:
-    "PENDING_REVIEW" | "VERIFIED" | "REJECTED" | "UNVERIFIED";
-  @IsString() @Length(30, 2000) evidence!: string;
+  @ApiProperty({
+    type: String,
+    enum: ["PENDING_REVIEW", "VERIFIED", "REJECTED", "UNVERIFIED"],
+  })
+  @IsIn(["PENDING_REVIEW", "VERIFIED", "REJECTED", "UNVERIFIED"])
+  status!: "PENDING_REVIEW" | "VERIFIED" | "REJECTED" | "UNVERIFIED";
+  @ApiProperty({ type: String, minLength: 30, maxLength: 2000 })
+  @IsString()
+  @Length(30, 2000)
+  evidence!: string;
 }
 class CountryDto {
-  @IsBoolean() enabled!: boolean;
+  @ApiProperty({ type: Boolean })
+  @IsBoolean()
+  enabled!: boolean;
 }
 @Controller("admin")
 @Roles("ADMIN", "SUPER_ADMIN")

@@ -1,3 +1,4 @@
+import { ApiProperty } from "@nestjs/swagger";
 import {
   BadRequestException,
   Body,
@@ -15,9 +16,18 @@ import { PrismaService } from "../common/prisma.service";
 import { PageDto, paging, publicUser, result } from "../common/dto";
 import { publicText } from "../common/policy.service";
 class ReviewDto {
-  @IsUUID() engagementId!: string;
-  @IsInt() @Min(1) @Max(5) rating!: number;
-  @IsString() @MaxLength(2000) comment!: string;
+  @ApiProperty({ type: String, format: "uuid" })
+  @IsUUID()
+  engagementId!: string;
+  @ApiProperty({ type: Number, minimum: 1, maximum: 5 })
+  @IsInt()
+  @Min(1)
+  @Max(5)
+  rating!: number;
+  @ApiProperty({ type: String, maxLength: 2000 })
+  @IsString()
+  @MaxLength(2000)
+  comment!: string;
 }
 @Controller("reviews")
 export class ReviewsController {

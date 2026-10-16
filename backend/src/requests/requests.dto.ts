@@ -1,3 +1,4 @@
+import { ApiProperty, ApiPropertyOptional } from "@nestjs/swagger";
 import {
   IsDateString,
   IsOptional,
@@ -7,14 +8,40 @@ import {
   Matches,
 } from "class-validator";
 export class RequestDto {
-  @IsUUID() categoryId!: string;
-  @IsString() @Length(5, 120) title!: string;
-  @IsString() @Length(20, 4000) description!: string;
-  @Matches(/^[A-Z]{2}$/) countryCode!: string;
-  @IsUUID() cityId!: string;
-  @IsString() @Length(2, 120) approximateLocation!: string;
-  @IsOptional() @Matches(/^\d{1,10}(\.\d{1,2})?$/) budgetMin?: string;
-  @IsOptional() @Matches(/^\d{1,10}(\.\d{1,2})?$/) budgetMax?: string;
-  @Matches(/^[A-Z]{3}$/) currencyCode!: string;
-  @IsOptional() @IsDateString() preferredDate?: string;
+  @ApiProperty({ type: String, format: "uuid" })
+  @IsUUID()
+  categoryId!: string;
+  @ApiProperty({ type: String, minLength: 5, maxLength: 120 })
+  @IsString()
+  @Length(5, 120)
+  title!: string;
+  @ApiProperty({ type: String, minLength: 20, maxLength: 4000 })
+  @IsString()
+  @Length(20, 4000)
+  description!: string;
+  @ApiProperty({ type: String })
+  @Matches(/^[A-Z]{2}$/)
+  countryCode!: string;
+  @ApiProperty({ type: String, format: "uuid" })
+  @IsUUID()
+  cityId!: string;
+  @ApiProperty({ type: String, minLength: 2, maxLength: 120 })
+  @IsString()
+  @Length(2, 120)
+  approximateLocation!: string;
+  @ApiPropertyOptional({ type: String })
+  @IsOptional()
+  @Matches(/^\d{1,10}(\.\d{1,2})?$/)
+  budgetMin?: string;
+  @ApiPropertyOptional({ type: String })
+  @IsOptional()
+  @Matches(/^\d{1,10}(\.\d{1,2})?$/)
+  budgetMax?: string;
+  @ApiProperty({ type: String })
+  @Matches(/^[A-Z]{3}$/)
+  currencyCode!: string;
+  @ApiPropertyOptional({ type: String, format: "date-time" })
+  @IsOptional()
+  @IsDateString()
+  preferredDate?: string;
 }

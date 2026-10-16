@@ -1,3 +1,4 @@
+import { ApiProperty } from "@nestjs/swagger";
 import {
   BadRequestException,
   Body,
@@ -15,10 +16,20 @@ import { PrismaService } from "../common/prisma.service";
 import { PageDto, paging, result } from "../common/dto";
 import { PolicyService } from "../common/policy.service";
 class ProposalDto {
-  @IsString() @Length(20, 3000) description!: string;
-  @Matches(/^\d{1,10}(\.\d{1,2})?$/) estimatedPrice!: string;
-  @Matches(/^[A-Z]{3}$/) currencyCode!: string;
-  @IsString() @Length(2, 120) estimatedDuration!: string;
+  @ApiProperty({ type: String, minLength: 20, maxLength: 3000 })
+  @IsString()
+  @Length(20, 3000)
+  description!: string;
+  @ApiProperty({ type: String })
+  @Matches(/^\d{1,10}(\.\d{1,2})?$/)
+  estimatedPrice!: string;
+  @ApiProperty({ type: String })
+  @Matches(/^[A-Z]{3}$/)
+  currencyCode!: string;
+  @ApiProperty({ type: String, minLength: 2, maxLength: 120 })
+  @IsString()
+  @Length(2, 120)
+  estimatedDuration!: string;
 }
 @Controller()
 export class ProposalsController {

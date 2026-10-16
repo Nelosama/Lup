@@ -30,7 +30,10 @@ describe("marketplace on real PostgreSQL", () => {
     conversationId: string,
     messageId: string,
     reviewId: string;
-  const suffix = randomUUID();
+  // Public fixture identifiers cannot resemble phone numbers rejected by the privacy filter.
+  const suffix = randomUUID().replace(/[0-9]/g, (n) =>
+    String.fromCharCode(103 + Number(n)),
+  );
   const assets = new Map<string, Buffer>();
   const call = (
     method: "get" | "post" | "put" | "patch" | "delete",
@@ -107,6 +110,24 @@ describe("marketplace on real PostgreSQL", () => {
   afterAll(async () => {
     await app?.close();
   });
+  it("documents request fields, public authentication and protected CSRF contracts", async () => {
+    const response = await request(app.getHttpServer())
+      .get("/api/docs-json")
+      .expect(200);
+    const doc = response.body;
+    expect(doc.components.schemas.RegisterDto.properties.email.format).toBe(
+      "email",
+    );
+    expect(
+      doc.components.schemas.RegisterDto.properties.password.minLength,
+    ).toBe(12);
+    expect(doc.paths["/api/auth/register"].post.security).toEqual([]);
+    expect(
+      doc.paths["/api/requests"].post.parameters.some(
+        (p: any) => p.name === "X-CSRF-Token" && p.required,
+      ),
+    ).toBe(true);
+  });
   it("registers, verifies and signs in clients and professionals with HttpOnly cookies", async () => {
     client = await account();
     pro = await account("PROFESSIONAL");
@@ -180,7 +201,14 @@ describe("marketplace on real PostgreSQL", () => {
         experienceDescription: "Five years of declared experience",
         isAvailable: true,
         cityIds: [city.id],
-      }).expect(200);
+      })
+        .expect((response) => {
+          if (response.status !== 200)
+            throw new Error(
+              `Profile creation failed: ${JSON.stringify(response.body)}`,
+            );
+        })
+        .expect(200);
       if (s === pro) profile = r.body;
     }
     await call("post", "/professional/services", pro, {

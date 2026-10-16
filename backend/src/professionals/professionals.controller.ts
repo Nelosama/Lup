@@ -1,3 +1,4 @@
+import { ApiProperty } from "@nestjs/swagger";
 import {
   BadRequestException,
   Body,
@@ -19,8 +20,13 @@ import { ProfileDto, ServiceDto } from "./professionals.dto";
 import { Prisma } from "@prisma/client";
 import { IsString, IsUUID, Length } from "class-validator";
 class AreaDto {
-  @IsUUID() cityId!: string;
-  @IsString() @Length(2, 100) zone!: string;
+  @ApiProperty({ type: String, format: "uuid" })
+  @IsUUID()
+  cityId!: string;
+  @ApiProperty({ type: String, minLength: 2, maxLength: 100 })
+  @IsString()
+  @Length(2, 100)
+  zone!: string;
 }
 const profileSelect = {
   id: true,

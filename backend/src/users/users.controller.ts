@@ -1,3 +1,4 @@
+import { ApiPropertyOptional } from "@nestjs/swagger";
 import {
   Body,
   Controller,
@@ -22,12 +23,31 @@ import { PrismaService } from "../common/prisma.service";
 import { PolicyService } from "../common/policy.service";
 import { privateUser } from "../common/dto";
 class UpdateUserDto {
-  @IsOptional() @IsString() @Length(2, 100) name?: string;
-  @IsOptional() @Matches(/^\+[1-9]\d{7,14}$/) phone?: string;
-  @IsOptional() @Matches(/^[A-Z]{2}$/) countryCode?: string;
-  @IsOptional() @IsUUID() cityId?: string;
-  @IsOptional() @IsIn(["es", "en"]) locale?: string;
-  @IsOptional() @IsTimeZone() timezone?: string;
+  @ApiPropertyOptional({ type: String, minLength: 2, maxLength: 100 })
+  @IsOptional()
+  @IsString()
+  @Length(2, 100)
+  name?: string;
+  @ApiPropertyOptional({ type: String })
+  @IsOptional()
+  @Matches(/^\+[1-9]\d{7,14}$/)
+  phone?: string;
+  @ApiPropertyOptional({ type: String })
+  @IsOptional()
+  @Matches(/^[A-Z]{2}$/)
+  countryCode?: string;
+  @ApiPropertyOptional({ type: String, format: "uuid" })
+  @IsOptional()
+  @IsUUID()
+  cityId?: string;
+  @ApiPropertyOptional({ type: String, enum: ["es", "en"] })
+  @IsOptional()
+  @IsIn(["es", "en"])
+  locale?: string;
+  @ApiPropertyOptional({ type: String })
+  @IsOptional()
+  @IsTimeZone()
+  timezone?: string;
 }
 @Controller("users")
 export class UsersController {

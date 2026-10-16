@@ -1,3 +1,4 @@
+import { ApiProperty } from "@nestjs/swagger";
 import {
   BadRequestException,
   Body,
@@ -15,6 +16,18 @@ import { Actor, CurrentUser, Roles } from "../auth/guards";
 import { PrismaService } from "../common/prisma.service";
 import { PageDto, paging, publicUser, result } from "../common/dto";
 class ReportDto {
+  @ApiProperty({
+    type: String,
+    enum: [
+      "USER",
+      "PROFILE",
+      "REQUEST",
+      "CONVERSATION",
+      "MESSAGE",
+      "REVIEW",
+      "ENGAGEMENT",
+    ],
+  })
   @IsIn([
     "USER",
     "PROFILE",
@@ -25,16 +38,31 @@ class ReportDto {
     "ENGAGEMENT",
   ])
   targetType!: string;
-  @IsUUID() targetId!: string;
-  @IsString() @Length(10, 2000) reason!: string;
+  @ApiProperty({ type: String, format: "uuid" })
+  @IsUUID()
+  targetId!: string;
+  @ApiProperty({ type: String, minLength: 10, maxLength: 2000 })
+  @IsString()
+  @Length(10, 2000)
+  reason!: string;
 }
 class ResolutionDto {
-  @IsIn(["DISMISS", "RESOLVE", "HIDE_CONTENT", "SUSPEND_USER"]) action!:
-    "DISMISS" | "RESOLVE" | "HIDE_CONTENT" | "SUSPEND_USER";
-  @IsString() @Length(15, 2000) reason!: string;
+  @ApiProperty({
+    type: String,
+    enum: ["DISMISS", "RESOLVE", "HIDE_CONTENT", "SUSPEND_USER"],
+  })
+  @IsIn(["DISMISS", "RESOLVE", "HIDE_CONTENT", "SUSPEND_USER"])
+  action!: "DISMISS" | "RESOLVE" | "HIDE_CONTENT" | "SUSPEND_USER";
+  @ApiProperty({ type: String, minLength: 15, maxLength: 2000 })
+  @IsString()
+  @Length(15, 2000)
+  reason!: string;
 }
 class ReasonDto {
-  @IsString() @Length(20, 2000) reason!: string;
+  @ApiProperty({ type: String, minLength: 20, maxLength: 2000 })
+  @IsString()
+  @Length(20, 2000)
+  reason!: string;
 }
 @Controller()
 export class ModerationController {

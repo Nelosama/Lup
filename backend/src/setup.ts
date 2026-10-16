@@ -36,6 +36,32 @@ export function setup(app: INestApplication) {
         .addCookieAuth("lup_session")
         .build(),
     );
+    doc.security = [{ cookie: [] }];
+    for (const path of Object.values(doc.paths))
+      for (const method of ["post", "put", "patch", "delete"] as const) {
+        const op = path?.[method];
+        if (op) {
+          op.parameters = [
+            ...(op.parameters ?? []),
+            {
+              name: "Origin",
+              in: "header",
+              required: true,
+              schema: { type: "string" },
+              description: "Exact origin configured in WEB_ORIGINS",
+            },
+          ];
+          if (!op.security || op.security.length)
+            op.parameters.push({
+              name: "X-CSRF-Token",
+              in: "header",
+              required: true,
+              schema: { type: "string" },
+              description:
+                "CSRF token returned by auth/login or auth/me; keep in memory only",
+            });
+        }
+      }
     SwaggerModule.setup("api/docs", app, doc);
   }
 }

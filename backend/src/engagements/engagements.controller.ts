@@ -1,3 +1,4 @@
+import { ApiProperty } from "@nestjs/swagger";
 import {
   BadRequestException,
   Body,
@@ -15,13 +16,24 @@ import { PrismaService } from "../common/prisma.service";
 import { PageDto, paging, publicUser, result } from "../common/dto";
 import { currency, PolicyService } from "../common/policy.service";
 class DirectDto {
-  @IsUUID() professionalId!: string;
-  @IsString() @Length(5, 120) title!: string;
-  @Matches(/^[A-Z]{3}$/) currencyCode!: string;
+  @ApiProperty({ type: String, format: "uuid" })
+  @IsUUID()
+  professionalId!: string;
+  @ApiProperty({ type: String, minLength: 5, maxLength: 120 })
+  @IsString()
+  @Length(5, 120)
+  title!: string;
+  @ApiProperty({ type: String })
+  @Matches(/^[A-Z]{3}$/)
+  currencyCode!: string;
 }
 class StateDto {
-  @IsIn(["AGREE", "START", "COMPLETE", "CANCEL", "DISPUTE"]) action!:
-    "AGREE" | "START" | "COMPLETE" | "CANCEL" | "DISPUTE";
+  @ApiProperty({
+    type: String,
+    enum: ["AGREE", "START", "COMPLETE", "CANCEL", "DISPUTE"],
+  })
+  @IsIn(["AGREE", "START", "COMPLETE", "CANCEL", "DISPUTE"])
+  action!: "AGREE" | "START" | "COMPLETE" | "CANCEL" | "DISPUTE";
 }
 @Controller("engagements")
 export class EngagementsController {

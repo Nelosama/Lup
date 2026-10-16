@@ -29,7 +29,7 @@ await writeFile(
   new URL("../frontend/vercel.json", import.meta.url),
   JSON.stringify(
     {
-      buildCommand: "npm run build -w frontend",
+      buildCommand: "npm run build",
       outputDirectory: "dist",
       installCommand: "npm ci --prefix ..",
       rewrites: [

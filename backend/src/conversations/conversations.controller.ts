@@ -1,3 +1,4 @@
+import { ApiProperty } from "@nestjs/swagger";
 import {
   BadRequestException,
   Body,
@@ -15,10 +16,15 @@ import { PrismaService } from "../common/prisma.service";
 import { PageDto, paging, publicUser, result } from "../common/dto";
 import { PolicyService } from "../common/policy.service";
 class ConversationDto {
-  @IsUUID() professionalId!: string;
+  @ApiProperty({ type: String, format: "uuid" })
+  @IsUUID()
+  professionalId!: string;
 }
 class MessageDto {
-  @IsString() @Length(1, 4000) body!: string;
+  @ApiProperty({ type: String, minLength: 1, maxLength: 4000 })
+  @IsString()
+  @Length(1, 4000)
+  body!: string;
 }
 @Controller("conversations")
 export class ConversationsController {
