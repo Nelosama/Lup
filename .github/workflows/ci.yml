@@ -11,7 +11,8 @@ concurrency:
   cancel-in-progress: true
 jobs:
   validate:
-    runs-on: ubuntu-latest
+    # Playwright 1.56.1 does not support Ubuntu 26.04 yet; pin the E2E runner to a supported LTS image.
+    runs-on: ubuntu-24.04
     timeout-minutes: 20
     services:
       postgres:
