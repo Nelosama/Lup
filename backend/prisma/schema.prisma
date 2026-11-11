@@ -1,0 +1,478 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
+}
+
+enum Role {
+  CLIENT
+  PROFESSIONAL
+  MODERATOR
+  ADMIN
+  SUPER_ADMIN
+}
+
+enum UserStatus {
+  ACTIVE
+  SUSPENDED
+  DEACTIVATED
+}
+
+enum VerificationStatus {
+  UNVERIFIED
+  PENDING_REVIEW
+  VERIFIED
+  REJECTED
+}
+
+enum RequestStatus {
+  OPEN
+  IN_REVIEW
+  ASSIGNED
+  IN_PROGRESS
+  COMPLETED
+  CANCELED
+}
+
+enum ProposalStatus {
+  PENDING
+  ACCEPTED
+  REJECTED
+  WITHDRAWN
+}
+
+enum EngagementStatus {
+  AGREED
+  IN_PROGRESS
+  COMPLETED
+  CANCELED
+  DISPUTED
+}
+
+enum ModerationStatus {
+  VISIBLE
+  HIDDEN
+}
+
+enum ReportStatus {
+  OPEN
+  RESOLVED
+  DISMISSED
+}
+
+enum TokenPurpose {
+  VERIFY_EMAIL
+  RESET_PASSWORD
+}
+
+model User {
+  id                String                    @id @default(uuid()) @db.Uuid
+  name              String                    @db.VarChar(100)
+  email             String                    @unique @db.VarChar(254)
+  phone             String?                   @db.VarChar(16)
+  passwordHash      String
+  countryCode       String                    @db.Char(2)
+  country           Country                   @relation(fields: [countryCode], references: [code])
+  cityId            String?                   @db.Uuid
+  city              City?                     @relation(fields: [cityId], references: [id])
+  avatarPath        String?
+  emailVerifiedAt   DateTime?                 @db.Timestamptz
+  status            UserStatus                @default(ACTIVE)
+  locale            String                    @default("es")
+  timezone          String                    @default("UTC")
+  createdAt         DateTime                  @default(now()) @db.Timestamptz
+  updatedAt         DateTime                  @updatedAt @db.Timestamptz
+  roles             UserRole[]
+  professional      ProfessionalProfile?
+  sessions          Session[]
+  tokens            AuthToken[]
+  requests          ServiceRequest[]
+  clientJobs        Engagement[]              @relation("ClientJobs")
+  professionalJobs  Engagement[]              @relation("ProfessionalJobs")
+  participants      ConversationParticipant[]
+  messages          Message[]
+  reviewsGiven      Review[]                  @relation("ReviewsGiven")
+  reviewsReceived   Review[]                  @relation("ReviewsReceived")
+  reports           Report[]
+  blocks            UserBlock[]               @relation("Blocker")
+  blockedBy         UserBlock[]               @relation("Blocked")
+  notifications     Notification[]
+  audits            AuditLog[]
+  moderationActions ModerationAction[]
+
+  @@index([status, createdAt])
+}
+
+model UserRole {
+  userId String @db.Uuid
+  role   Role
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@id([userId, role])
+}
+
+model Session {
+  id        String   @id @default(uuid()) @db.Uuid
+  userId    String   @db.Uuid
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  tokenHash String   @unique
+  csrfToken String
+  expiresAt DateTime @db.Timestamptz
+  createdAt DateTime @default(now()) @db.Timestamptz
+
+  @@index([userId, expiresAt])
+}
+
+model AuthToken {
+  id        String       @id @default(uuid()) @db.Uuid
+  userId    String       @db.Uuid
+  user      User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  tokenHash String       @unique
+  purpose   TokenPurpose
+  expiresAt DateTime     @db.Timestamptz
+  createdAt DateTime     @default(now()) @db.Timestamptz
+
+  @@index([userId, purpose])
+}
+
+model Country {
+  code         String           @id @db.Char(2)
+  name         String
+  currencyCode String           @db.Char(3)
+  enabled      Boolean          @default(false)
+  regions      Region[]
+  cities       City[]
+  users        User[]
+  requests     ServiceRequest[]
+}
+
+model Region {
+  id          String  @id @default(uuid()) @db.Uuid
+  countryCode String  @db.Char(2)
+  country     Country @relation(fields: [countryCode], references: [code])
+  name        String
+  cities      City[]
+
+  @@unique([countryCode, name])
+}
+
+model City {
+  id          String           @id @default(uuid()) @db.Uuid
+  countryCode String           @db.Char(2)
+  country     Country          @relation(fields: [countryCode], references: [code])
+  regionId    String           @db.Uuid
+  region      Region           @relation(fields: [regionId], references: [id])
+  name        String
+  timezone    String
+  latitude    Decimal?         @db.Decimal(9, 6)
+  longitude   Decimal?         @db.Decimal(9, 6)
+  users       User[]
+  areas       ServiceArea[]
+  requests    ServiceRequest[]
+
+  @@unique([regionId, name])
+  @@index([countryCode, name])
+}
+
+model Category {
+  id              String                @id @default(uuid()) @db.Uuid
+  slug            String                @unique
+  parentId        String?               @db.Uuid
+  parent          Category?             @relation("CategoryTree", fields: [parentId], references: [id])
+  children        Category[]            @relation("CategoryTree")
+  active          Boolean               @default(true)
+  requiresLicense Boolean               @default(false)
+  position        Int                   @default(0)
+  translations    CategoryTranslation[]
+  services        ProfessionalService[]
+  requests        ServiceRequest[]
+}
+
+model CategoryTranslation {
+  categoryId String   @db.Uuid
+  category   Category @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+  locale     String   @db.VarChar(5)
+  name       String
+
+  @@id([categoryId, locale])
+}
+
+model ProfessionalProfile {
+  id                    String                @id @default(uuid()) @db.Uuid
+  userId                String                @unique @db.Uuid
+  user                  User                  @relation(fields: [userId], references: [id])
+  displayName           String                @db.VarChar(100)
+  biography             String                @db.VarChar(3000)
+  experienceDescription String                @default("") @db.VarChar(2000)
+  verificationStatus    VerificationStatus    @default(UNVERIFIED)
+  verificationEvidence  String?
+  isAvailable           Boolean               @default(true)
+  createdAt             DateTime              @default(now()) @db.Timestamptz
+  updatedAt             DateTime              @updatedAt @db.Timestamptz
+  services              ProfessionalService[]
+  areas                 ServiceArea[]
+  portfolio             PortfolioImage[]
+  proposals             Proposal[]
+}
+
+model ProfessionalService {
+  id              String              @id @default(uuid()) @db.Uuid
+  professionalId  String              @db.Uuid
+  professional    ProfessionalProfile @relation(fields: [professionalId], references: [id])
+  categoryId      String              @db.Uuid
+  category        Category            @relation(fields: [categoryId], references: [id])
+  title           String              @db.VarChar(120)
+  description     String              @db.VarChar(3000)
+  indicativePrice Decimal?            @db.Decimal(12, 2)
+  currencyCode    String              @db.Char(3)
+  active          Boolean             @default(true)
+  createdAt       DateTime            @default(now()) @db.Timestamptz
+
+  @@index([categoryId, active])
+  @@index([professionalId])
+}
+
+model ServiceArea {
+  professionalId String              @db.Uuid
+  professional   ProfessionalProfile @relation(fields: [professionalId], references: [id], onDelete: Cascade)
+  cityId         String              @db.Uuid
+  city           City                @relation(fields: [cityId], references: [id])
+  zone           String              @default("") @db.VarChar(100)
+
+  @@id([professionalId, cityId, zone])
+  @@index([cityId])
+}
+
+model PortfolioImage {
+  id             String              @id @default(uuid()) @db.Uuid
+  professionalId String              @db.Uuid
+  professional   ProfessionalProfile @relation(fields: [professionalId], references: [id])
+  storagePath    String              @unique
+  description    String?             @db.VarChar(300)
+  position       Int                 @default(0)
+  createdAt      DateTime            @default(now()) @db.Timestamptz
+
+  @@index([professionalId, position])
+}
+
+model ServiceRequest {
+  id                  String           @id @default(uuid()) @db.Uuid
+  clientId            String           @db.Uuid
+  client              User             @relation(fields: [clientId], references: [id])
+  categoryId          String           @db.Uuid
+  category            Category         @relation(fields: [categoryId], references: [id])
+  title               String           @db.VarChar(120)
+  description         String           @db.VarChar(4000)
+  countryCode         String           @db.Char(2)
+  country             Country          @relation(fields: [countryCode], references: [code])
+  cityId              String           @db.Uuid
+  city                City             @relation(fields: [cityId], references: [id])
+  approximateLocation String           @db.VarChar(120)
+  budgetMin           Decimal?         @db.Decimal(12, 2)
+  budgetMax           Decimal?         @db.Decimal(12, 2)
+  currencyCode        String           @db.Char(3)
+  preferredDate       DateTime?        @db.Timestamptz
+  status              RequestStatus    @default(OPEN)
+  moderationStatus    ModerationStatus @default(VISIBLE)
+  createdAt           DateTime         @default(now()) @db.Timestamptz
+  updatedAt           DateTime         @updatedAt @db.Timestamptz
+  images              RequestImage[]
+  proposals           Proposal[]
+  engagement          Engagement?
+  conversations       Conversation[]
+
+  @@index([status, categoryId, cityId, createdAt])
+  @@index([clientId, createdAt])
+}
+
+model RequestImage {
+  id          String         @id @default(uuid()) @db.Uuid
+  requestId   String         @db.Uuid
+  request     ServiceRequest @relation(fields: [requestId], references: [id])
+  storagePath String         @unique
+  createdAt   DateTime       @default(now()) @db.Timestamptz
+
+  @@index([requestId])
+}
+
+model Proposal {
+  id                String              @id @default(uuid()) @db.Uuid
+  requestId         String              @db.Uuid
+  request           ServiceRequest      @relation(fields: [requestId], references: [id])
+  professionalId    String              @db.Uuid
+  professional      ProfessionalProfile @relation(fields: [professionalId], references: [id])
+  description       String              @db.VarChar(3000)
+  estimatedPrice    Decimal             @db.Decimal(12, 2)
+  currencyCode      String              @db.Char(3)
+  estimatedDuration String              @db.VarChar(120)
+  status            ProposalStatus      @default(PENDING)
+  createdAt         DateTime            @default(now()) @db.Timestamptz
+  updatedAt         DateTime            @updatedAt @db.Timestamptz
+  engagement        Engagement?
+
+  @@unique([requestId, professionalId])
+  @@index([professionalId, status])
+}
+
+model Engagement {
+  id                      String           @id @default(uuid()) @db.Uuid
+  clientId                String           @db.Uuid
+  client                  User             @relation("ClientJobs", fields: [clientId], references: [id])
+  professionalId          String           @db.Uuid
+  professional            User             @relation("ProfessionalJobs", fields: [professionalId], references: [id])
+  requestId               String?          @unique @db.Uuid
+  request                 ServiceRequest?  @relation(fields: [requestId], references: [id])
+  proposalId              String?          @unique @db.Uuid
+  proposal                Proposal?        @relation(fields: [proposalId], references: [id])
+  directKey               String?          @unique
+  title                   String           @db.VarChar(120)
+  status                  EngagementStatus @default(AGREED)
+  agreedPrice             Decimal?         @db.Decimal(12, 2)
+  currencyCode            String           @db.Char(3)
+  professionalAgreedAt    DateTime?        @db.Timestamptz
+  clientCompletedAt       DateTime?        @db.Timestamptz
+  professionalCompletedAt DateTime?        @db.Timestamptz
+  completedAt             DateTime?        @db.Timestamptz
+  createdAt               DateTime         @default(now()) @db.Timestamptz
+  updatedAt               DateTime         @updatedAt @db.Timestamptz
+  reviews                 Review[]
+  conversation            Conversation?
+
+  @@index([clientId, status])
+  @@index([professionalId, status])
+}
+
+model Conversation {
+  id           String                    @id @default(uuid()) @db.Uuid
+  requestId    String?                   @db.Uuid
+  request      ServiceRequest?           @relation(fields: [requestId], references: [id])
+  engagementId String?                   @unique @db.Uuid
+  engagement   Engagement?               @relation(fields: [engagementId], references: [id])
+  directKey    String?                   @unique
+  createdAt    DateTime                  @default(now()) @db.Timestamptz
+  participants ConversationParticipant[]
+  messages     Message[]
+}
+
+model ConversationParticipant {
+  conversationId String       @db.Uuid
+  conversation   Conversation @relation(fields: [conversationId], references: [id])
+  userId         String       @db.Uuid
+  user           User         @relation(fields: [userId], references: [id])
+  lastReadAt     DateTime     @default(now()) @db.Timestamptz
+
+  @@id([conversationId, userId])
+  @@index([userId])
+}
+
+model Message {
+  id               String           @id @default(uuid()) @db.Uuid
+  conversationId   String           @db.Uuid
+  conversation     Conversation     @relation(fields: [conversationId], references: [id])
+  senderId         String           @db.Uuid
+  sender           User             @relation(fields: [senderId], references: [id])
+  body             String           @db.VarChar(4000)
+  moderationStatus ModerationStatus @default(VISIBLE)
+  createdAt        DateTime         @default(now()) @db.Timestamptz
+
+  @@index([conversationId, createdAt, id])
+}
+
+model Review {
+  id               String           @id @default(uuid()) @db.Uuid
+  engagementId     String           @db.Uuid
+  engagement       Engagement       @relation(fields: [engagementId], references: [id])
+  reviewerId       String           @db.Uuid
+  reviewer         User             @relation("ReviewsGiven", fields: [reviewerId], references: [id])
+  reviewedUserId   String           @db.Uuid
+  reviewedUser     User             @relation("ReviewsReceived", fields: [reviewedUserId], references: [id])
+  rating           Int              @db.SmallInt
+  comment          String           @db.VarChar(2000)
+  createdAt        DateTime         @default(now()) @db.Timestamptz
+  moderationStatus ModerationStatus @default(VISIBLE)
+
+  @@unique([engagementId, reviewerId])
+  @@index([reviewedUserId, moderationStatus, createdAt])
+}
+
+model Report {
+  id         String             @id @default(uuid()) @db.Uuid
+  reporterId String             @db.Uuid
+  reporter   User               @relation(fields: [reporterId], references: [id])
+  targetType String             @db.VarChar(30)
+  targetId   String             @db.Uuid
+  reason     String             @db.VarChar(2000)
+  status     ReportStatus       @default(OPEN)
+  createdAt  DateTime           @default(now()) @db.Timestamptz
+  actions    ModerationAction[]
+
+  @@index([status, createdAt])
+}
+
+model UserBlock {
+  blockerId String   @db.Uuid
+  blocker   User     @relation("Blocker", fields: [blockerId], references: [id])
+  blockedId String   @db.Uuid
+  blocked   User     @relation("Blocked", fields: [blockedId], references: [id])
+  createdAt DateTime @default(now()) @db.Timestamptz
+
+  @@id([blockerId, blockedId])
+}
+
+model ModerationAction {
+  id        String   @id @default(uuid()) @db.Uuid
+  actorId   String   @db.Uuid
+  actor     User     @relation(fields: [actorId], references: [id])
+  reportId  String?  @db.Uuid
+  report    Report?  @relation(fields: [reportId], references: [id])
+  action    String
+  reason    String
+  createdAt DateTime @default(now()) @db.Timestamptz
+}
+
+model Notification {
+  id         String    @id @default(uuid()) @db.Uuid
+  userId     String    @db.Uuid
+  user       User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  kind       String
+  resourceId String    @db.Uuid
+  readAt     DateTime? @db.Timestamptz
+  createdAt  DateTime  @default(now()) @db.Timestamptz
+
+  @@index([userId, readAt, createdAt])
+}
+
+model AuditLog {
+  id        String   @id @default(uuid()) @db.Uuid
+  actorId   String   @db.Uuid
+  actor     User     @relation(fields: [actorId], references: [id])
+  action    String
+  targetId  String
+  reason    String
+  createdAt DateTime @default(now()) @db.Timestamptz
+
+  @@index([actorId, createdAt])
+}
+
+// Encrypted, short-lived delivery payloads. Never expose through REST.
+model MailOutbox {
+  id            String   @id @default(uuid()) @db.Uuid
+  ciphertext    String
+  attempts      Int      @default(0)
+  nextAttemptAt DateTime @default(now()) @db.Timestamptz
+  createdAt     DateTime @default(now()) @db.Timestamptz
+
+  @@index([attempts, nextAttemptAt])
+}
+
+model LoginAttempt {
+  key             String   @id
+  attempts        Int      @default(0)
+  windowStartedAt DateTime @default(now()) @db.Timestamptz
+
+  @@index([windowStartedAt])
+}

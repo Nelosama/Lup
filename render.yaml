@@ -1,0 +1,40 @@
+# Preparation only: do not apply until public deployment is explicitly authorized.
+services:
+  - type: web
+    name: lup-api
+    runtime: node
+    plan: free
+    buildCommand: npm ci && npm run db:generate && npm run build -w backend
+    startCommand: npm run start -w backend
+    healthCheckPath: /api/health
+    envVars:
+      - key: NODE_VERSION
+        value: 24.19.0
+      - key: NODE_ENV
+        value: production
+      - key: DATABASE_URL
+        sync: false
+      - key: DIRECT_URL
+        sync: false
+      - key: WEB_ORIGINS
+        sync: false
+      - key: PUBLIC_WEB_URL
+        sync: false
+      - key: COOKIE_SAME_SITE
+        value: lax
+      - key: TRUST_PROXY_HOPS
+        value: "1"
+      - key: MAIL_MODE
+        value: resend
+      - key: RESEND_API_KEY
+        sync: false
+      - key: MAIL_FROM
+        sync: false
+      - key: MAIL_ENCRYPTION_KEY
+        sync: false
+      - key: SUPABASE_URL
+        sync: false
+      - key: SUPABASE_SERVICE_ROLE_KEY
+        sync: false
+      - key: SUPABASE_STORAGE_BUCKET
+        value: lup-images

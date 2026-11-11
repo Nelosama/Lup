@@ -1,0 +1,18 @@
+services:
+  postgres:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: lup
+      POSTGRES_PASSWORD: lup_local_only
+      POSTGRES_DB: lup
+    ports:
+      - "127.0.0.1:5432:5432"
+    volumes:
+      - lup_postgres:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U lup -d lup"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+volumes:
+  lup_postgres:
